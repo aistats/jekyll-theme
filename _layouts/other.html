@@ -3,17 +3,23 @@ layout: default
 ---
 
 {% assign sorted = site.github.public_repositories  %}
-  
+{% assign thisyear = site.conference.dates | last | date: "%Y" | to_integer %}
+
 <h1>{{ page.title }}</h1>
 
 {{ content }}
 
 <ul>
-  {% for repository in sorted reversed %}{% if repository.has_pages %}{% unless repository.name contains 'github.io' %}{% if repository.name contains site.style %}
-  <li>
-    <a href="{{ repository.name | prepend: "/" | prepend: site.url | append: "/"  }}"><b>{{ site.style | upcase }} {{ repository.name | remove_first: site.style }}</b></a> {{ repository.description }} 
-  </li>
-    {% endif %}{% endunless %}{% endif %}{% endfor %}    
+  {% for repository in sorted reversed %}
+    {% assign year = repository.name | remove_first: site.style | to_integer %}
+    {% if repository.has_pages and repository.name contains site.style and thisyear > year %}
+      {% unless repository.name contains 'github.io' %}
+        <li>
+          <a href="{{ repository.name | prepend: "/" | prepend: site.url | append: "/" }}"><b>{{ site.style | upcase | append: " " | append: year }} </b></a> {{ repository.description }}
+        </li>
+      {% endunless %}
+    {% endif %}
+  {% endfor %}
   <br>
 </ul>
 
