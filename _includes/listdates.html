@@ -1,0 +1,99 @@
+{% comment %}
+  List conference.deadlines for dates.md / CFP / guidelines.
+
+  Site default: site.timezone (recommended: AOE).
+  Per-deadline override: deadline.tz (e.g. AOE, UTC, CEST).
+
+  AOE means Anywhere on Earth, end of day — store parseable date/enddate/time
+  values in _config.yml; do not embed "Anywhere on Earth" in the YAML strings.
+
+  Optional: include.types="submission,review" to filter by deadline.type.
+{% endcomment %}
+{% if include.types %}
+  {% assign types = include.types | split: "," %}
+{% else %}
+  {% assign types = nil %}
+{% endif %}
+{% assign datefmt = "%B %-d, %Y" %}
+{% assign site_tz_raw = site.timezone | default: site.TZ | default: "AOE" %}
+{% assign site_tz = site_tz_raw | upcase %}
+
+{% if site_tz == "AOE" %}
+<p>Dates may be subject to change. Date-only deadlines are Anywhere on Earth (AoE), end of day, unless a deadline sets a different <code>tz</code>.</p>
+{% else %}
+<p>Dates may be subject to change. Default timezone: {{ site_tz_raw }}. Use <code>tz: AOE</code> on a deadline for Anywhere on Earth (end of day), or another <code>tz</code> to override.</p>
+{% endif %}
+
+<ul>
+  {% for deadline in site.conference.deadlines %}
+    {% unless deadline.hide %}
+    {% if deadline.type == nil or types == nil or types contains deadline.type %}
+
+      {% assign item_tz_raw = deadline.tz | default: site_tz_raw %}
+      {% assign item_tz = item_tz_raw | upcase %}
+      {% if item_tz == "AOE" %}
+        {% assign item_tz_label = "AoE" %}
+      {% else %}
+        {% assign item_tz_label = item_tz_raw %}
+      {% endif %}
+
+      {% capture nowunix %}{{ "now" | date: "%s" }}{% endcapture %}
+      {% if deadline.enddate %}
+        {% assign enddate = deadline.enddate %}
+      {% else %}
+        {% assign enddate = deadline.date %}
+      {% endif %}
+      {% capture endunix %}{{ enddate | date: "%s" | plus: 172800 }}{% endcapture %}
+
+      <li>
+        {% if endunix < nowunix %}<s>{% endif %}
+        {% if deadline.important %}<strong>{% endif %}
+
+        {{ deadline.name }}:
+        {% if deadline.text %}
+          {{ deadline.text }}
+        {% elsif deadline.time %}
+          <time datetime="{{ deadline.time }}">
+            {{ deadline.time | date: "%A, %-d %B %Y %I:%M%P" }}
+            ({{ item_tz_label }})
+          </time>
+        {% elsif deadline.date %}
+          {% if deadline.old %}
+            <s>
+              <time datetime="{{ deadline.old }}">
+                {{ deadline.old | date: datefmt }}
+              </time>
+            </s>
+            &nbsp;extended to
+          {% endif %}
+          <time datetime="{{ deadline.date }}">
+            {{ deadline.date | date: datefmt }}
+          </time>
+          {% if deadline.enddate %}
+            –
+            {% if deadline.endold %}
+              <s>
+                <time datetime="{{ deadline.endold }}">
+                  {{ deadline.endold | date: datefmt }}
+                </time>
+              </s>
+              &nbsp;extended to
+            {% endif %}
+            <time datetime="{{ deadline.enddate }}">
+              {{ deadline.enddate | date: datefmt }}
+            </time>
+          {% endif %}
+          {% if item_tz != site_tz or site_tz != "AOE" %}
+            ({{ item_tz_label }})
+          {% endif %}
+        {% endif %}
+
+        {% if deadline.suffix %}{{ deadline.suffix }}{% endif %}
+
+        {% if deadline.important %}</strong>{% endif %}
+        {% if endunix < nowunix %}</s>{% endif %}
+      </li>
+    {% endif %}
+    {% endunless %}
+  {% endfor %}
+</ul>

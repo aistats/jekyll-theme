@@ -1,9 +1,36 @@
+{% comment %}
+  Compact deadline list (theme). Prefer listdates.html on year sites.
+  Honours site.timezone and deadline.tz (AOE = Anywhere on Earth).
+{% endcomment %}
+{% assign site_tz_raw = site.timezone | default: site.TZ | default: "AOE" %}
 <ul>
-	{% for deadline in site.conference.deadlines %} 
-	<li>    {% if deadline.important  %}<strong>{% endif %}
-			{{ deadline.name }}: {% if deadline.text %}{{ deadline.text }}{% elsif deadline.time %}<time datetime="{{ deadline.time }}">{{ deadline.time | date: "%A, %-d %B %Y %I:%M%P (%Z)" }}{% if site.TZ %} ({{ site.TZ }}){% endif %}</time>{% elsif deadline.date %}<time datetime="{{ deadline.date }}">{{ deadline.date | date: "%A, %B %-d, %Y" }}</time>{% endif %}
-			{% if deadline.important %}</strong>{% endif %} 
-	</li>
-	{% endfor %}
+  {% for deadline in site.conference.deadlines %}
+    {% unless deadline.hide %}
+    {% assign item_tz_raw = deadline.tz | default: site_tz_raw %}
+    {% assign item_tz = item_tz_raw | upcase %}
+    {% if item_tz == "AOE" %}
+      {% assign item_tz_label = "AoE" %}
+    {% else %}
+      {% assign item_tz_label = item_tz_raw %}
+    {% endif %}
+    <li>
+      {% if deadline.important %}<strong>{% endif %}
+      {{ deadline.name }}:
+      {% if deadline.text %}
+        {{ deadline.text }}
+      {% elsif deadline.time %}
+        <time datetime="{{ deadline.time }}">{{ deadline.time | date: "%A, %-d %B %Y %I:%M%P" }} ({{ item_tz_label }})</time>
+      {% elsif deadline.date %}
+        <time datetime="{{ deadline.date }}">{{ deadline.date | date: "%A, %B %-d, %Y" }}</time>
+        {% if deadline.enddate %}
+          –
+          <time datetime="{{ deadline.enddate }}">{{ deadline.enddate | date: "%A, %B %-d, %Y" }}</time>
+        {% endif %}
+        {% assign site_tz = site_tz_raw | upcase %}
+        {% if item_tz != site_tz or site_tz != "AOE" %} ({{ item_tz_label }}){% endif %}
+      {% endif %}
+      {% if deadline.important %}</strong>{% endif %}
+    </li>
+    {% endunless %}
+  {% endfor %}
 </ul>
-
